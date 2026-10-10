@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strona w budowie</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0b0c10;
+            color: #ffffff;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Interaktywne tło canvas na całą stronę */
+        #bgCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Główny kontener treści */
+        .container {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            padding: 3rem 2rem;
+            max-width: 500px;
+            width: 90%;
+            background: rgba(11, 12, 16, 0.6);
+            backdrop-filter: blur(8px);
+            border-radius: 16px;
+            border: 1px solid rgba(102, 252, 241, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #66fcf1;
+            text-shadow: 0 0 10px rgba(102, 252, 241, 0.5);
+        }
+
+        p {
+            font-size: 1.1rem;
+            color: #c5a059;
+            margin-bottom: 2.5rem;
+            line-height: 1.6;
+        }
+
+        /* Pasek postępu prac */
+        .progress-container {
+            background: #1f2833;
+            border-radius: 20px;
+            height: 12px;
+            width: 100%;
+            overflow: hidden;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(102, 252, 241, 0.3);
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #45f3ff, #66fcf1);
+            height: 100%;
+            width: 75%; /* Procent zaawansowania prac */
+            box-shadow: 0 0 10px #66fcf1;
+            animation: pulse 2s infinite ease-in-out;
+        }
+
+        .progress-text {
+            font-size: 0.9rem;
+            color: #45f3ff;
+            letter-spacing: 1px;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.8; }
+            50% { opacity: 1; }
+            100% { opacity: 0.8; }
+        }
+
+        @media (max-width: 480px) {
+            h1 { font-size: 2rem; }
+            p { font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Tło generowane przez JS -->
+    <canvas id="bgCanvas"></canvas>
+
+    <!-- Treść strony -->
+    <div class="container">
+        <h1>W budowie</h1>
+        <p>Pracujemy nad czymś wyjątkowym. Nasza nowa strona internetowa wystartuje już niebawem!</p>
+        
+        <!-- Pasek postępu -->
+        <div class="progress-container">
+            <div class="progress-bar"></div>
+        </div>
+        <div class="progress-text">Ukończono projekt w: 75%</div>
+    </div>
+
+    <script>
+        // --- SKRYPT ANIMOWANEGO TŁA (Cząsteczki reagujące na mysz) ---
+        const canvas = document.getElementById('bgCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let particlesArray = [];
+        const numberOfParticles = 80;
+
+        // Dopasowanie rozmiaru canvasu
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Pozycja myszy
+        const mouse = {
+            x: null,
+            y: null,
+            radius: 150
+        }
+
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = e.x;
+            mouse.y = e.y;
+        });
+
+        window.addEventListener('mouseout', () => {
+            mouse.x = null;
+            mouse.y = null;
+        });
+
+        // Klasa pojedynczej cząsteczki
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 3 + 1;
+                this.speedX = Math.random() * 1 - 0.5;
+                this.speedY = Math.random() * 1 - 0.5;
+                this.color = 'rgba(102, 252, 241, ' + Math.random() + ')';
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                // Odbijanie od krawędzi screenu
+                if (this.x < 0 || this.x > canvas.width) this.speedX = -this.speedX;
+                if (this.y < 0 || this.y > canvas.height) this.speedY = -this.speedY;
+
+                // Interakcja z myszką (odpychanie)
+                let dx = mouse.x - this.x;
+                let dy = mouse.y - this.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < mouse.radius) {
+                    if (mouse.x < this.x && this.x < canvas.width - this.size * 10) this.x += 2;
+                    if (mouse.x > this.x && this.x > this.size * 10) this.x -= 2;
+                    if (mouse.y < this.y && this.y < canvas.height - this.size * 10) this.y += 2;
+                    if (mouse.y > this.y && this.y > this.size * 10) this.y -= 2;
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Inicjalizacja cząsteczek
+        function init() {
+            particlesArray = [];
+            for (let i = 0; i < numberOfParticles; i++) {
+                particlesArray.push(new Particle());
+            }
+        }
+
+        // Pętla animacji
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update();
+                particlesArray[i].draw();
+            }
+            requestAnimationFrame(animate);
+        }
+
+        init();
+        animate();
+    </script>
+</body>
+</html>
